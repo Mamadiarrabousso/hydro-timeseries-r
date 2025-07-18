@@ -1,0 +1,79 @@
+---
+title: "Hydrologic Time Series Forecasting"
+author: "Mame Diarra"
+output: html_document
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+setwd("C:/Users/Mame Diarra/Downloads")
+library(dataRetrieval)
+library(dplyr)s
+library(ggplot2)
+library(forecast)
+library(lubridate)
+library(xts)
+
+```
+
+```{r}
+site_no <- "01184000"
+parameter_cd <- "00060"  # Discharge (cfs)
+start_date <- "2021-01-01"
+end_date <- "2021-12-31"
+
+discharge_data <- readNWISdv(
+  siteNumbers = site_no,
+  parameterCd = parameter_cd,
+  startDate = start_date,
+  endDate = end_date
+)
+
+discharge_data <- renameNWISColumns(discharge_data)
+
+head(discharge_data)
+
+```
+
+```{r}
+flow_plot <- ggplot(discharge_data, aes(x = Date, y = Flow)) +
+  geom_line(color = "steelblue") +
+  labs(title = "Daily Streamflow - 2021",
+       x = "Date", y = "Discharge (cfs)") +
+  theme_bw()
+
+# Display plot
+flow_plot
+
+# Save to file
+ggsave("plots/streamflow_2021.png", plot = flow_plot, width = 8, height = 4)
+
+
+```
+
+```{r}
+flow_ts <- ts(discharge_data$Flow, frequency = 365, start = c(2021, 1))
+plot(flow_ts, main = "Time Series of Daily Flow", ylab = "Discharge (cfs)")
+
+```
+
+
+```{r}
+fit <- auto.arima(flow_ts)
+forecast_30 <- forecast(fit, h = 30)
+plot(forecast_30, main = "30-Day Discharge Forecast (ARIMA)")
+# Save ARIMA forecast plot
+png("plots/arima_forecast.png", width = 800, height = 400)
+plot(forecast_30, main = "30-Day Discharge Forecast (ARIMA)")
+dev.off()
+
+```
+```{r}
+getwd
+```
